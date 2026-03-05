@@ -6,7 +6,8 @@ echo "ox:ox" | chpasswd
 
 sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
 
-systemctl enable dhcpcd.service || true
+systemctl disable dhcpcd.service || true
+systemctl enable NetworkManager.service || true
 systemctl enable sshd.service || true
 systemctl enable gdm.service || true
 systemctl set-default graphical.target || true

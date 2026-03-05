@@ -15,7 +15,9 @@ qemu-guest-agent
 syslinux
 virtualbox-guest-utils-nox
 iptables-nft
-dhcpcd
+networkmanager
+wpa_supplicant
+linux-firmware
 btrfs-progs
 lvm2
 mdadm

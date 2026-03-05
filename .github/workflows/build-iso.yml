@@ -93,7 +93,7 @@ jobs:
           test "$(run_ssh 'hostnamectl --static')" = "oxsystemsos"
           run_ssh "grep -q '^NAME=\"OXSystemsOS\"' /etc/os-release"
           run_ssh "systemctl is-active sshd | grep -qx active"
-          run_ssh "systemctl is-active dhcpcd | grep -qx active"
+          run_ssh "systemctl is-active NetworkManager | grep -qx active"
           run_ssh "ss -tulpn | grep -q ':22'"
           run_ssh "echo ox | sudo -S pacman -Sy --noconfirm --disable-download-timeout"
 
