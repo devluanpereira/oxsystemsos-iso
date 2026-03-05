@@ -1,0 +1,47 @@
+name: Build OXSystemsOS ISO
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 3 * * 0'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build ISO in Arch Linux container
+        run: |
+          set -euo pipefail
+          docker run --rm --privileged \
+            -v "$GITHUB_WORKSPACE:/work" \
+            -w /work \
+            archlinux:latest \
+            bash -lc '
+              set -euo pipefail
+              pacman-key --init
+              pacman-key --populate archlinux
+              pacman -Sy --noconfirm archlinux-keyring
+              pacman -Syu --noconfirm --disable-download-timeout
+              pacman -S --noconfirm archiso grub dosfstools mtools efibootmgr
+              rm -rf /work/out-work
+              rm -f /work/out-iso/*.iso
+              mkdir -p /work/out-iso
+              mkarchiso -m iso -v -w /work/out-work -o /work/out-iso /work/oxsystemsos
+            '
+
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: oxsystemsos-iso
+          path: out-iso/*.iso
+          if-no-files-found: error
+          retention-days: 14
