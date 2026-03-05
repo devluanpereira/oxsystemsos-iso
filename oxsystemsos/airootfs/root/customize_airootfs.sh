@@ -43,4 +43,11 @@ DISTRIB_DESCRIPTION="OXSystemsOS Live • Infra / Rescue"
 EOF
 echo "OXSystemsOS" > /etc/arch-release
 
+# Promote OX repo signature policy after keyring population succeeds.
+if pacman-key --populate oxsystemsos >/dev/null 2>&1; then
+  sed -i '/^\[oxsystemsos\]/,/^$/{s/^SigLevel.*/SigLevel = Required DatabaseRequired/}' /etc/pacman.conf
+else
+  sed -i '/^\[oxsystemsos\]/,/^$/{s/^SigLevel.*/SigLevel = Optional DatabaseOptional/}' /etc/pacman.conf
+fi
+
 chmod 750 /root || true
