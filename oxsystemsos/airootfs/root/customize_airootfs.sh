@@ -8,12 +8,27 @@ sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
 
 systemctl enable dhcpcd.service || true
 systemctl enable sshd.service || true
+systemctl enable gdm.service || true
+systemctl set-default graphical.target || true
 
 mkdir -p /etc/ssh/sshd_config.d
 cat > /etc/ssh/sshd_config.d/oxsystemsos.conf <<'CONF'
 PermitRootLogin no
 PasswordAuthentication yes
 CONF
+
+mkdir -p /etc/gdm
+cat > /etc/gdm/custom.conf <<'CONF'
+[daemon]
+AutomaticLoginEnable=True
+AutomaticLogin=ox
+CONF
+
+install -d -m 0755 /etc/sudoers.d
+cat > /etc/sudoers.d/90-ox-live-installer <<'CONF'
+ox ALL=(ALL) NOPASSWD: /usr/bin/archinstall
+CONF
+chmod 0440 /etc/sudoers.d/90-ox-live-installer
 
 # Keep distro identity consistent in tools that still read lsb/arch-release.
 cat > /etc/lsb-release <<'EOF'

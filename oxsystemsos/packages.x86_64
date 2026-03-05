@@ -6,6 +6,7 @@ mkinitcpio
 mkinitcpio-archiso
 open-vm-tools
 openssh
+archinstall
 pv
 qemu-guest-agent
 syslinux
@@ -25,3 +26,15 @@ f2fs-tools
 exfatprogs
 ntfs-3g
 rsync
+
+# Live desktop (minimal GNOME) + installer front-end
+gdm
+gnome-shell
+gnome-session
+gnome-control-center
+gnome-terminal
+nautilus
+gnome-text-editor
+xorg-xwayland
+mesa
+zenity

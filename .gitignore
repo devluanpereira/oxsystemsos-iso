@@ -5,6 +5,8 @@ work/
 out/
 out-iso/
 out-work/
+out-iso-user/
+out-work-user/
 codesigning*
 *.iso
 *.img
