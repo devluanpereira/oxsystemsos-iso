@@ -1,12 +1,12 @@
 [Plymouth Theme]
-Name=OXSystemsOS Spinfinity
-Description=OXSystemsOS splash with centered logo and animated loader
+Name=OXSystemsOS Splash
+Description=OXSystemsOS animated splash with logo and spinner
 ModuleName=two-step
 
 [two-step]
 ScaleBackgroundImage=false
 ConsoleLogBackgroundColor=0x00000000
-ImageDir=/usr/share/plymouth/themes/spinfinity
+ImageDir=/usr/share/plymouth/themes/oxsystemsos
 BackgroundStartColor=0x11141a
 BackgroundEndColor=0x0b1018
 WatermarkHorizontalAlignment=0.5
