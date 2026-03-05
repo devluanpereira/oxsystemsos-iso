@@ -1,16 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-lock_file="${XDG_RUNTIME_DIR:-/tmp}/.ox-installer-launched"
-if [[ -e "${lock_file}" ]]; then
-  exit 0
+autostart_mode=false
+if [[ "${1:-}" == "--autostart" ]]; then
+  autostart_mode=true
 fi
-touch "${lock_file}"
+
+lock_file="${XDG_RUNTIME_DIR:-/tmp}/.ox-installer-launched"
+if [[ "${autostart_mode}" == "true" ]]; then
+  if [[ -e "${lock_file}" ]]; then
+    exit 0
+  fi
+  touch "${lock_file}"
+fi
 
 title="OXSystemsOS Installer"
-prompt="Start OXSystemsOS installation now?"
+prompt="Iniciar instalacao do OXSystemsOS agora?"
 
-if command -v zenity >/dev/null 2>&1; then
+if [[ "${autostart_mode}" == "true" ]] && command -v zenity >/dev/null 2>&1; then
   if ! zenity --question \
       --title="${title}" \
       --text="${prompt}" \
@@ -21,14 +28,179 @@ if command -v zenity >/dev/null 2>&1; then
   fi
 fi
 
-if command -v gnome-terminal >/dev/null 2>&1; then
-  exec gnome-terminal --title="${title}" -- bash -lc '
-    echo "Launching archinstall..."
-    sudo archinstall
-    echo
-    echo "Installer finished. Press Enter to close."
-    read -r
-  '
+if command -v calamares >/dev/null 2>&1; then
+  if command -v pkexec >/dev/null 2>&1; then
+    exec pkexec calamares
+  fi
+
+  if command -v sudo >/dev/null 2>&1; then
+    exec sudo calamares
+  fi
+
+  zenity --error --title="${title}" --text="Calamares encontrado, mas sem pkexec/sudo para elevar privilegios."
+  exit 1
 fi
 
-exec bash -lc 'sudo archinstall'
+if ! command -v archinstall >/dev/null 2>&1; then
+  zenity --error --title="${title}" --text="Nenhum instalador disponivel (calamares/archinstall)."
+  exit 1
+fi
+
+mapfile -t disks < <(
+  lsblk -dn -o NAME,SIZE,MODEL,TYPE | awk '
+    $4 == "disk" {
+      model=$3
+      for (i=4; i<NF; i++) model=model " " $i
+      gsub(/^[ \t]+|[ \t]+$/, "", model)
+      if (model == "") model = "Unknown model"
+      printf "/dev/%s|%s|%s\n", $1, $2, model
+    }'
+)
+
+if [[ ${#disks[@]} -eq 0 ]]; then
+  zenity --error --title="${title}" --text="Nenhum disco detectado para instalacao."
+  exit 1
+fi
+
+list_args=(
+  --list
+  --radiolist
+  --title="${title}"
+  --text="Selecione o disco de destino (sera apagado):"
+  --column="Usar"
+  --column="Disco"
+  --column="Tamanho"
+  --column="Modelo"
+  --width=900
+  --height=420
+)
+
+for row in "${disks[@]}"; do
+  IFS='|' read -r dev size model <<< "${row}"
+  list_args+=(FALSE "${dev}" "${size}" "${model}")
+done
+
+target_disk="$(zenity "${list_args[@]}")" || exit 0
+
+form_out="$(zenity --forms \
+  --title="${title}" \
+  --text="Parametros principais da instalacao" \
+  --separator='|' \
+  --add-entry="Hostname" \
+  --add-entry="Usuario administrador" \
+  --add-entry="Timezone (ex: America/Fortaleza)" \
+  --add-entry="Locale (ex: pt_BR)" \
+  --width=650 \
+  --height=280)" || exit 0
+
+IFS='|' read -r hostname username timezone locale <<< "${form_out}"
+hostname="${hostname:-oxsystemsos}"
+username="${username:-ox}"
+timezone="${timezone:-America/Fortaleza}"
+locale="${locale:-pt_BR}"
+
+user_pass="$(zenity --password --title="${title}: senha de ${username}")" || exit 0
+user_pass_confirm="$(zenity --password --title="${title}: confirme a senha")" || exit 0
+
+if [[ -z "${user_pass}" ]]; then
+  zenity --error --title="${title}" --text="Senha vazia nao e permitida."
+  exit 1
+fi
+
+if [[ "${user_pass}" != "${user_pass_confirm}" ]]; then
+  zenity --error --title="${title}" --text="As senhas nao conferem."
+  exit 1
+fi
+
+if ! zenity --question \
+  --title="${title}" \
+  --ok-label="Instalar e apagar disco" \
+  --cancel-label="Cancelar" \
+  --text="Confirma apagar completamente ${target_disk} e instalar OXSystemsOS?"; then
+  exit 0
+fi
+
+tmpdir="$(mktemp -d /tmp/oxinstall.XXXXXX)"
+cfg="${tmpdir}/config.json"
+creds="${tmpdir}/creds.json"
+runner="${tmpdir}/run-installer.sh"
+
+export OX_TARGET_DISK="${target_disk}"
+export OX_HOSTNAME="${hostname}"
+export OX_USERNAME="${username}"
+export OX_PASSWORD="${user_pass}"
+export OX_TIMEZONE="${timezone}"
+export OX_LOCALE="${locale}"
+export OX_CONFIG_PATH="${cfg}"
+export OX_CREDS_PATH="${creds}"
+
+python - <<'PY'
+import json
+import os
+from pathlib import Path
+
+cfg = {
+    "archinstall-language": "English",
+    "audio_config": {"audio": "pipewire"},
+    "bootloader_config": {"bootloader": "Systemd-boot", "uki": False, "removable": False},
+    "disk_config": {
+        "config_type": "default_layout",
+        "device_modifications": [{"device": os.environ["OX_TARGET_DISK"], "wipe": True}],
+    },
+    "hostname": os.environ["OX_HOSTNAME"],
+    "kernels": ["linux"],
+    "locale_config": {"kb_layout": "br-abnt2", "sys_enc": "UTF-8", "sys_lang": os.environ["OX_LOCALE"]},
+    "network_config": {"type": "iso"},
+    "ntp": True,
+    "packages": ["firefox"],
+    "profile_config": {
+        "gfx_driver": "All open-source",
+        "greeter": "gdm",
+        "profile": {"main": "Desktop", "details": ["GNOME"]},
+    },
+    "script": "guided",
+    "silent": True,
+    "swap": {"enabled": True, "algorithm": "zstd"},
+    "timezone": os.environ["OX_TIMEZONE"],
+}
+
+creds = {
+    "users": [
+        {
+            "username": os.environ["OX_USERNAME"],
+            "!password": os.environ["OX_PASSWORD"],
+            "sudo": True,
+        }
+    ]
+}
+
+Path(os.environ["OX_CONFIG_PATH"]).write_text(json.dumps(cfg, indent=2), encoding="utf-8")
+Path(os.environ["OX_CREDS_PATH"]).write_text(json.dumps(creds, indent=2), encoding="utf-8")
+PY
+
+cat > "${runner}" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+echo "Running OXSystemsOS installer..."
+echo "Target disk: ${target_disk}"
+echo
+sudo archinstall --config "${cfg}" --creds "${creds}"
+rc=\$?
+echo
+if [[ \$rc -eq 0 ]]; then
+  echo "Installation completed successfully."
+else
+  echo "Installation failed with code \$rc."
+fi
+echo "Log: /var/log/archinstall/install.log"
+echo
+read -r -p "Press Enter to close..."
+exit \$rc
+EOF
+chmod +x "${runner}"
+
+if command -v gnome-terminal >/dev/null 2>&1; then
+  exec gnome-terminal --title="${title}" -- "${runner}"
+fi
+
+exec "${runner}"

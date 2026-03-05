@@ -7,6 +7,7 @@ mkinitcpio-archiso
 open-vm-tools
 openssh
 archinstall
+calamares
 pv
 qemu-guest-agent
 syslinux
@@ -38,3 +39,4 @@ gnome-text-editor
 xorg-xwayland
 mesa
 zenity
+firefox

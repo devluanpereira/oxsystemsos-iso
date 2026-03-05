@@ -27,8 +27,19 @@ CONF
 install -d -m 0755 /etc/sudoers.d
 cat > /etc/sudoers.d/90-ox-live-installer <<'CONF'
 ox ALL=(ALL) NOPASSWD: /usr/bin/archinstall
+ox ALL=(ALL) NOPASSWD: /usr/bin/calamares
 CONF
 chmod 0440 /etc/sudoers.d/90-ox-live-installer
+
+# If Calamares is installed, pin it to OX branding and local config.
+if [[ -f /usr/share/calamares/settings.conf ]]; then
+  install -Dm644 /usr/share/calamares/settings.conf /etc/calamares/settings.conf
+  sed -i 's/^branding:.*/branding: oxsystemsos/' /etc/calamares/settings.conf || true
+  sed -i 's/^prompt-install:.*/prompt-install: true/' /etc/calamares/settings.conf || true
+fi
+
+# Apply system-wide GNOME defaults (wallpaper, favorites, etc.).
+dconf update || true
 
 # Keep distro identity consistent in tools that still read lsb/arch-release.
 cat > /etc/lsb-release <<'EOF'

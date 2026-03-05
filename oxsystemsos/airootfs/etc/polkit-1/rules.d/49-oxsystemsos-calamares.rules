@@ -1,0 +1,5 @@
+polkit.addRule(function(action, subject) {
+  if (subject.user === "ox" && action.id === "com.github.calamares.pkexec.run") {
+    return polkit.Result.YES;
+  }
+});

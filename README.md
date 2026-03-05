@@ -38,3 +38,19 @@ qemu-system-x86_64 -m 2048 -enable-kvm \
 ssh -p 2222 ox@127.0.0.1
 # senha: ox
 ```
+
+## Live GNOME (OXSystemsOS)
+
+- Login automático no usuário `ox`
+- `Install OXSystemsOS` no menu de aplicativos
+- Calamares (instalador gráfico) iniciado no login da sessão live
+- Fallback para wizard `archinstall` se `calamares` não estiver disponível
+- Navegador incluído: `firefox`
+
+## Gravar pendrive bootável
+
+```bash
+sudo ./scripts/make-boot-usb.sh ./out-iso/oxsystemsos-*.iso /dev/sdX
+```
+
+Troque `/dev/sdX` pelo disco USB correto (ex.: `/dev/sdb`).

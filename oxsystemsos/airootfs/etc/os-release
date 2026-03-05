@@ -5,3 +5,4 @@ ID_LIKE=arch
 VERSION_ID="2026.03"
 HOME_URL="https://github.com/devluanpereira/oxsystemsos-iso"
 SUPPORT_URL="https://github.com/devluanpereira/oxsystemsos-iso/issues"
+LOGO=oxsystemsos-logo
