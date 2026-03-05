@@ -1,0 +1,21 @@
+# OXSystemsOS GRUB theme
+# Assets expected in the same folder:
+# - background.png (full scene with OX logo, current asset: 1536x1024)
+
+desktop-color: "#232629"
+desktop-image: "background.png"
+title-text: ""
+
++ boot_menu {
+  left = 29%
+  top = 69%
+  width = 42%
+  height = 19%
+  item_color = "#c8b99b"
+  selected_item_color = "#f0d08e"
+  item_height = 34
+  item_padding = 10
+  item_spacing = 6
+  icon_width = 16
+  icon_height = 16
+}
