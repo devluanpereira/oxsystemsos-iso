@@ -4,6 +4,7 @@ hyperv
 linux
 mkinitcpio
 mkinitcpio-archiso
+plymouth
 open-vm-tools
 openssh
 archinstall
