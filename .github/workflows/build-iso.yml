@@ -38,6 +38,65 @@ jobs:
               mkarchiso -m iso -v -w /work/out-work -o /work/out-iso /work/oxsystemsos
             '
 
+      - name: Install smoke test dependencies
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 sshpass netcat-openbsd
+
+      - name: Smoke test ISO in QEMU (SSH + services + pacman)
+        run: |
+          set -euo pipefail
+          ISO="$(ls -1 out-iso/oxsystemsos-*.iso | head -n1)"
+          echo "Testing ISO: ${ISO}"
+
+          cleanup() {
+            if [[ -f qemu.pid ]]; then
+              kill "$(cat qemu.pid)" 2>/dev/null || true
+            fi
+          }
+          trap cleanup EXIT
+
+          qemu-system-x86_64 \
+            -m 2048 \
+            -display none \
+            -daemonize \
+            -pidfile qemu.pid \
+            -cdrom "${ISO}" \
+            -nic user,model=virtio-net-pci,hostfwd=tcp::2222-:22
+
+          for _ in $(seq 1 180); do
+            if nc -z 127.0.0.1 2222; then
+              break
+            fi
+            sleep 2
+          done
+
+          SSH_OPTS=(
+            -p 2222
+            -o ConnectTimeout=5
+            -o StrictHostKeyChecking=no
+            -o UserKnownHostsFile=/dev/null
+          )
+
+          run_ssh() {
+            sshpass -p ox ssh "${SSH_OPTS[@]}" ox@127.0.0.1 "$@"
+          }
+
+          for _ in $(seq 1 60); do
+            if run_ssh "echo vm-ready" >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+
+          test "$(run_ssh 'hostnamectl --static')" = "oxsystemsos"
+          run_ssh "grep -q '^NAME=\"OXSystemsOS\"' /etc/os-release"
+          run_ssh "systemctl is-active sshd | grep -qx active"
+          run_ssh "systemctl is-active dhcpcd | grep -qx active"
+          run_ssh "ss -tulpn | grep -q ':22'"
+          run_ssh "echo ox | sudo -S pacman -Sy --noconfirm --disable-download-timeout"
+
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v4
         with:

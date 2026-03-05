@@ -1,0 +1,99 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build ISO (Podman)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "set -euo pipefail\nsudo podman run --rm -it --privileged -v \"$PWD:/work\" -w /work archlinux:latest bash -lc '\nset -euo pipefail\npacman-key --init\npacman-key --populate archlinux\npacman -Sy --noconfirm archlinux-keyring\npacman -Syu --noconfirm --disable-download-timeout\npacman -S --noconfirm archiso grub dosfstools mtools efibootmgr\nrm -rf /work/out-work\nrm -f /work/out-iso/*.iso\nmkdir -p /work/out-iso\nmkarchiso -m iso -v -w /work/out-work -o /work/out-iso /work/oxsystemsos\n'"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Build ISO (Podman Fast Cached)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "set -euo pipefail\nsudo podman run --rm -it --privileged -v \"$PWD:/work\" -w /work archlinux:latest bash -lc '\nset -euo pipefail\npacman-key --init\npacman-key --populate archlinux\npacman -Sy --noconfirm --disable-download-timeout archlinux-keyring\npacman -S --noconfirm --needed --disable-download-timeout archiso grub dosfstools mtools efibootmgr\nmkdir -p /work/out-work /work/out-iso\nrm -f /work/out-iso/*.iso\nmkarchiso -m iso -v -w /work/out-work -o /work/out-iso /work/oxsystemsos\n'"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run QEMU (latest ISO)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "set -euo pipefail\nISO=$(ls -1t out-iso/oxsystemsos-*.iso 2>/dev/null | head -n1 || true)\nif [ -z \"${ISO}\" ]; then\n  echo \"Nenhum ISO encontrado em out-iso/. Rode Build ISO primeiro.\"\n  exit 1\nfi\necho \"Usando ISO: ${ISO}\"\nqemu-system-x86_64 -m 2048 -enable-kvm -cdrom \"${ISO}\" -nic user,model=virtio-net-pci,hostfwd=tcp::2222-:22"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "SSH VM (ox@127.0.0.1:2222)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "ssh -o StrictHostKeyChecking=accept-new -p 2222 ox@127.0.0.1"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Check Branding (no Arch Linux)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "set -euo pipefail\nFILES=(\n  oxsystemsos/syslinux/syslinux.cfg\n  oxsystemsos/syslinux/syslinux-linux.cfg\n  oxsystemsos/grub/grub.cfg\n  oxsystemsos/grub/loopback.cfg\n  oxsystemsos/efiboot/loader/loader.conf\n  oxsystemsos/efiboot/loader/entries/*.conf\n  oxsystemsos/airootfs/etc/issue\n  oxsystemsos/airootfs/etc/issue.net\n  oxsystemsos/airootfs/etc/os-release\n  oxsystemsos/airootfs/etc/hostname\n  oxsystemsos/airootfs/etc/motd\n)\necho \"Verificando strings proibidas...\"\nif rg -n \"Arch Linux\" ${FILES[@]}; then\n  echo \"Falha: ainda existe 'Arch Linux' nos arquivos acima.\"\n  exit 1\nfi\necho \"OK: sem 'Arch Linux' nos arquivos de branding.\""
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}

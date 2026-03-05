@@ -12,4 +12,16 @@ syslinux
 virtualbox-guest-utils-nox
 iptables-nft
 dhcpcd
-
+btrfs-progs
+lvm2
+mdadm
+smartmontools
+nvme-cli
+testdisk
+gptfdisk
+parted
+xfsprogs
+f2fs-tools
+exfatprogs
+ntfs-3g
+rsync
