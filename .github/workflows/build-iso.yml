@@ -95,7 +95,7 @@ jobs:
           run_ssh "systemctl is-active sshd | grep -qx active"
           run_ssh "systemctl is-active NetworkManager | grep -qx active"
           run_ssh "ss -tulpn | grep -q ':22'"
-          run_ssh "echo ox | sudo -S pacman -Sy --noconfirm --disable-download-timeout"
+          run_ssh "echo ox | sudo -S bash -lc 'for _ in \$(seq 1 120); do systemctl is-active --quiet pacman-init.service || break; sleep 1; done; pacman-key --init || true; pacman-key --populate archlinux || true; pacman-key --populate oxsystemsos || true; pacman -Sy --noconfirm --disable-download-timeout'"
 
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v4

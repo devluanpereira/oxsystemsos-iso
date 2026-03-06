@@ -43,11 +43,19 @@ DISTRIB_DESCRIPTION="OXSystemsOS Live • Infra / Rescue"
 EOF
 echo "OXSystemsOS" > /etc/arch-release
 
+# Initialize pacman keyring in the live rootfs so signed repos work out of box.
+install -d -m 0700 /etc/pacman.d/gnupg
+if [[ ! -s /etc/pacman.d/gnupg/pubring.gpg && ! -s /etc/pacman.d/gnupg/pubring.kbx ]]; then
+  pacman-key --init || true
+fi
+pacman-key --populate archlinux || true
+
 # Promote OX repo signature policy after keyring population succeeds.
 if pacman-key --populate oxsystemsos >/dev/null 2>&1; then
   sed -i '/^\[oxsystemsos\]/,/^$/{s/^SigLevel.*/SigLevel = Required DatabaseRequired/}' /etc/pacman.conf
 else
-  sed -i '/^\[oxsystemsos\]/,/^$/{s/^SigLevel.*/SigLevel = Optional DatabaseOptional/}' /etc/pacman.conf
+  # Fallback to Never to avoid locking users out of pacman if key import fails.
+  sed -i '/^\[oxsystemsos\]/,/^$/{s/^SigLevel.*/SigLevel = Never/}' /etc/pacman.conf
 fi
 
 chmod 750 /root || true

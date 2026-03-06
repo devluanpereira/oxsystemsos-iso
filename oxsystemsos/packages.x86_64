@@ -2,6 +2,7 @@ base
 cloud-init
 hyperv
 linux
+gnupg
 mkinitcpio
 mkinitcpio-archiso
 plymouth
