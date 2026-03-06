@@ -19,6 +19,9 @@ virtualbox-guest-utils-nox
 iptables-nft
 networkmanager
 wpa_supplicant
+dhclient
+pipewire-jack
+gnu-free-fonts
 linux-firmware
 btrfs-progs
 lvm2
