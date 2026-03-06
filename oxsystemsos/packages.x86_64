@@ -12,7 +12,6 @@ openssh
 archinstall
 oxsystemsos-keyring
 calamares
-oxsystemsos-calamares-config
 grub
 efibootmgr
 pv
