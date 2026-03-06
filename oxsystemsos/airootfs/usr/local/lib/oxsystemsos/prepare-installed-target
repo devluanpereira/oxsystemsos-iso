@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+version_id="2026.03"
+home_url="https://github.com/devluanpereira/oxsystemsos-iso"
+support_url="https://github.com/devluanpereira/oxsystemsos-iso/issues"
+logo="oxsystemsos-logo"
+
+if [[ -r /etc/os-release ]]; then
+  # Preserve the current build metadata while dropping the live identity.
+  # shellcheck disable=SC1091
+  . /etc/os-release || true
+  version_id="${VERSION_ID:-${version_id}}"
+  home_url="${HOME_URL:-${home_url}}"
+  support_url="${SUPPORT_URL:-${support_url}}"
+  logo="${LOGO:-${logo}}"
+fi
+
+cat > /etc/os-release <<'EOF'
+NAME="OXSystemsOS"
+PRETTY_NAME="OXSystemsOS"
+ID=oxsystemsos
+ID_LIKE=arch
+VERSION_ID="__VERSION_ID__"
+HOME_URL="__HOME_URL__"
+SUPPORT_URL="__SUPPORT_URL__"
+LOGO=__LOGO__
+EOF
+sed -i \
+  -e "s|__VERSION_ID__|${version_id}|g" \
+  -e "s|__HOME_URL__|${home_url}|g" \
+  -e "s|__SUPPORT_URL__|${support_url}|g" \
+  -e "s|__LOGO__|${logo}|g" \
+  /etc/os-release
+
+cat > /etc/lsb-release <<'EOF'
+DISTRIB_ID="OXSystemsOS"
+DISTRIB_RELEASE="__VERSION_ID__"
+DISTRIB_DESCRIPTION="OXSystemsOS"
+EOF
+sed -i "s|__VERSION_ID__|${version_id}|g" /etc/lsb-release
+
+printf '%s\n' "OXSystemsOS" > /etc/issue
+printf '%s\n' "OXSystemsOS" > /etc/issue.net
+cat > /etc/motd <<'EOF'
++------------------------------+
+|         OXSystemsOS          |
++------------------------------+
+EOF
+
+rm -f /etc/mkinitcpio.conf.d/archiso.conf
+install -d -m 0755 /etc/mkinitcpio.d
+cat > /etc/mkinitcpio.d/linux.preset <<'EOF'
+# mkinitcpio preset file for the 'linux' package
+
+ALL_config="/etc/mkinitcpio.conf"
+ALL_kver="/boot/vmlinuz-linux"
+
+PRESETS=('default' 'fallback')
+
+default_image="/boot/initramfs-linux.img"
+fallback_image="/boot/initramfs-linux-fallback.img"
+fallback_options="-S autodetect"
+EOF
+
+if getent passwd ox >/dev/null 2>&1; then
+  userdel -f -r ox || true
+fi
+rm -rf /home/ox
+
+rm -f /etc/sudoers.d/90-ox-live-installer
+rm -f /etc/polkit-1/rules.d/49-oxsystemsos-calamares.rules
+rm -f /etc/xdg/autostart/ox-live-installer.desktop
+rm -f /usr/share/applications/ox-installer.desktop
+rm -f /usr/local/bin/ox-live-installer
+rm -f /root/customize_airootfs.sh
+rm -f /etc/gdm/custom.conf
+rm -f /etc/ssh/sshd_config.d/10-archiso.conf
+rm -f /etc/systemd/system/getty@tty1.service.d/autologin.conf
+rm -f /etc/systemd/network/20-ethernet.network
+rm -f /etc/systemd/networkd.conf.d/ipv6-privacy-extensions.conf
+rm -f /etc/systemd/resolved.conf.d/archiso.conf
+rm -f /etc/systemd/system/systemd-networkd-wait-online.service.d/wait-for-only-one-interface.conf
+
+if [[ -f /etc/sudoers ]]; then
+  sed -i 's/^%wheel ALL=(ALL:ALL) ALL$/# %wheel ALL=(ALL:ALL) ALL/' /etc/sudoers || true
+fi

@@ -13,6 +13,8 @@ archinstall
 oxsystemsos-keyring
 calamares
 oxsystemsos-calamares-config
+grub
+efibootmgr
 pv
 qemu-guest-agent
 syslinux
@@ -32,6 +34,7 @@ nvme-cli
 testdisk
 gptfdisk
 parted
+dosfstools
 xfsprogs
 f2fs-tools
 exfatprogs

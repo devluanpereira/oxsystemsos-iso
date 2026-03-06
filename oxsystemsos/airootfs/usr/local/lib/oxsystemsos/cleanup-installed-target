@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+packages=(
+  archinstall
+  calamares
+  oxsystemsos-calamares-config
+  mkinitcpio-archiso
+  erofs-utils
+  syslinux
+)
+
+installed=()
+for pkg in "${packages[@]}"; do
+  if pacman -Qq "${pkg}" >/dev/null 2>&1; then
+    installed+=("${pkg}")
+  fi
+done
+
+if (( ${#installed[@]} > 0 )); then
+  pacman -Rns --noconfirm "${installed[@]}"
+fi
+
+rm -rf /etc/calamares
+
+systemctl set-default graphical.target >/dev/null 2>&1 || true
+
+rm -f /usr/local/lib/oxsystemsos/prepare-installed-target
+rm -f /usr/local/lib/oxsystemsos/cleanup-installed-target
+rmdir --ignore-fail-on-non-empty /usr/local/lib/oxsystemsos || true
