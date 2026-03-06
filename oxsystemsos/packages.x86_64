@@ -5,6 +5,7 @@ linux
 gnupg
 mkinitcpio
 mkinitcpio-archiso
+erofs-utils
 plymouth
 open-vm-tools
 openssh
