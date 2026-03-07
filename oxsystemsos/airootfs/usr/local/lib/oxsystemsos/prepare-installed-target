@@ -63,6 +63,20 @@ fallback_image="/boot/initramfs-linux-fallback.img"
 fallback_options="-S autodetect"
 EOF
 
+install -d -m 0755 /boot
+kernel_image=""
+while IFS= read -r path; do
+  kernel_image="${path}"
+  break
+done < <(find /usr/lib/modules -maxdepth 2 -type f -name vmlinuz | sort)
+
+if [[ -z "${kernel_image}" ]]; then
+  echo "No kernel image found under /usr/lib/modules" >&2
+  exit 1
+fi
+
+install -m 0644 "${kernel_image}" /boot/vmlinuz-linux
+
 if getent passwd ox >/dev/null 2>&1; then
   userdel -f -r ox || true
 fi
