@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root_spec="$(awk '$2 == "/" { print $1; exit }' /etc/fstab)"
+boot_spec="$(awk '$2 == "/boot" { print $1; exit }' /etc/fstab)"
+
+if [[ -z "${root_spec}" ]]; then
+  echo "Unable to determine root filesystem from /etc/fstab" >&2
+  exit 1
+fi
+
+search_cmd=""
+search_spec="${boot_spec:-$root_spec}"
+kernel_path="/boot/vmlinuz-linux"
+initramfs_path="/boot/initramfs-linux.img"
+ucode_path=""
+
+if [[ -n "${boot_spec}" ]]; then
+  kernel_path="/vmlinuz-linux"
+  initramfs_path="/initramfs-linux.img"
+fi
+
+case "${search_spec}" in
+  UUID=*)
+    search_cmd="search --no-floppy --fs-uuid --set=root ${search_spec#UUID=}"
+    ;;
+  PARTUUID=*)
+    search_cmd="search --no-floppy --partuuid --set=root ${search_spec#PARTUUID=}"
+    ;;
+  *)
+    search_cmd=""
+    ;;
+esac
+
+if [[ -f /boot/intel-ucode.img ]]; then
+  ucode_path="/boot/intel-ucode.img"
+  [[ -n "${boot_spec}" ]] && ucode_path="/intel-ucode.img"
+elif [[ -f /boot/amd-ucode.img ]]; then
+  ucode_path="/boot/amd-ucode.img"
+  [[ -n "${boot_spec}" ]] && ucode_path="/amd-ucode.img"
+fi
+
+install -d -m 0755 /boot/grub
+
+{
+  printf 'set default=0\n'
+  printf 'set timeout=5\n\n'
+  if [[ -n "${search_cmd}" ]]; then
+    printf '%s\n\n' "${search_cmd}"
+  fi
+  printf 'menuentry "OXSystemsOS" {\n'
+  printf '    linux %s root=%s rw quiet loglevel=3\n' "${kernel_path}" "${root_spec}"
+  if [[ -n "${ucode_path}" ]]; then
+    printf '    initrd %s %s\n' "${ucode_path}" "${initramfs_path}"
+  else
+    printf '    initrd %s\n' "${initramfs_path}"
+  fi
+  printf '}\n'
+} > /boot/grub/grub.cfg
