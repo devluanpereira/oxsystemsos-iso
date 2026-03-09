@@ -4,6 +4,7 @@ set -euo pipefail
 packages=(
   archinstall
   calamares
+  cloud-init
   oxsystemsos-calamares-config
   mkinitcpio-archiso
   erofs-utils
@@ -22,9 +23,11 @@ if (( ${#installed[@]} > 0 )); then
 fi
 
 rm -rf /etc/calamares
+rm -rf /etc/cloud
 
 systemctl set-default graphical.target >/dev/null 2>&1 || true
 
 rm -f /usr/local/lib/oxsystemsos/prepare-installed-target
 rm -f /usr/local/lib/oxsystemsos/cleanup-installed-target
+rm -f /usr/local/lib/oxsystemsos/write-grub-config
 rmdir --ignore-fail-on-non-empty /usr/local/lib/oxsystemsos || true

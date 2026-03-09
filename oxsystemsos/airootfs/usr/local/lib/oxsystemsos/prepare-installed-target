@@ -5,6 +5,7 @@ version_id="2026.03"
 home_url="https://github.com/devluanpereira/oxsystemsos-iso"
 support_url="https://github.com/devluanpereira/oxsystemsos-iso/issues"
 logo="oxsystemsos-logo"
+hostname_value="oxsystemsos"
 
 if [[ -r /etc/os-release ]]; then
   # Preserve the current build metadata while dropping the live identity.
@@ -14,6 +15,13 @@ if [[ -r /etc/os-release ]]; then
   home_url="${HOME_URL:-${home_url}}"
   support_url="${SUPPORT_URL:-${support_url}}"
   logo="${LOGO:-${logo}}"
+fi
+
+if [[ -r /etc/hostname ]]; then
+  current_hostname="$(tr -d "\n" < /etc/hostname)"
+  if [[ -n "${current_hostname}" ]]; then
+    hostname_value="${current_hostname}"
+  fi
 fi
 
 cat > /etc/os-release <<'EOF'
@@ -39,6 +47,13 @@ DISTRIB_RELEASE="__VERSION_ID__"
 DISTRIB_DESCRIPTION="OXSystemsOS"
 EOF
 sed -i "s|__VERSION_ID__|${version_id}|g" /etc/lsb-release
+
+printf "%s\n" "${hostname_value}" > /etc/hostname
+cat > /etc/hosts <<EOF
+127.0.0.1	localhost
+::1		localhost
+127.0.1.1	${hostname_value}.localdomain	${hostname_value}
+EOF
 
 printf '%s\n' "OXSystemsOS" > /etc/issue
 printf '%s\n' "OXSystemsOS" > /etc/issue.net
@@ -89,6 +104,12 @@ rm -f /usr/share/applications/ox-installer.desktop
 rm -f /usr/local/bin/ox-live-installer
 rm -f /root/customize_airootfs.sh
 rm -f /etc/gdm/custom.conf
+install -d -m 0755 /usr/share/glib-2.0/schemas
+cat > /usr/share/glib-2.0/schemas/90_oxsystemsos.gdm.gschema.override <<'EOF'
+[org.gnome.login-screen]
+logo='/usr/share/icons/hicolor/scalable/apps/oxsystemsos-logo.svg'
+EOF
+glib-compile-schemas /usr/share/glib-2.0/schemas >/dev/null 2>&1 || true
 rm -f /etc/ssh/sshd_config.d/10-archiso.conf
 rm -f /etc/systemd/system/getty@tty1.service.d/autologin.conf
 rm -f /etc/systemd/network/20-ethernet.network
