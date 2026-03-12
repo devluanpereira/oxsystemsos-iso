@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="260" viewBox="0 0 640 260">
+  <defs>
+    <linearGradient id="left-ribbon" x1="110" y1="184" x2="334" y2="72" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#49bfff"/>
+      <stop offset="55%" stop-color="#78f1e1"/>
+      <stop offset="100%" stop-color="#9cf6de"/>
+    </linearGradient>
+    <linearGradient id="right-ribbon" x1="114" y1="82" x2="532" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#66dff0"/>
+      <stop offset="45%" stop-color="#42c8ff"/>
+      <stop offset="100%" stop-color="#1468ff"/>
+    </linearGradient>
+    <linearGradient id="left-shine" x1="145" y1="162" x2="292" y2="92" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#b6fff2" stop-opacity="0"/>
+      <stop offset="60%" stop-color="#d7fff8" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="right-shine" x1="256" y1="134" x2="502" y2="166" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="48%" stop-color="#b8e9ff" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M110 180 C152 92 248 70 320 130 C388 186 468 188 530 98" stroke="url(#left-ribbon)" stroke-width="56"/>
+    <path d="M110 98 C176 188 252 206 320 130 C388 54 468 70 530 180" stroke="url(#right-ribbon)" stroke-width="56"/>
+    <path d="M126 168 C168 108 240 94 298 126" stroke="url(#left-shine)" stroke-width="12"/>
+    <path d="M314 138 C380 92 444 98 506 154" stroke="url(#right-shine)" stroke-width="12"/>
+  </g>
+</svg>

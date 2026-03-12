@@ -105,9 +105,11 @@ rm -f /usr/local/bin/ox-live-installer
 rm -f /root/customize_airootfs.sh
 rm -f /etc/gdm/custom.conf
 install -d -m 0755 /usr/share/glib-2.0/schemas
+# Use a transparent logo-only asset in GDM so the login screen does not show
+# the square app icon tile oversized at the bottom.
 cat > /usr/share/glib-2.0/schemas/90_oxsystemsos.gdm.gschema.override <<'EOF'
 [org.gnome.login-screen]
-logo='/usr/share/icons/hicolor/scalable/apps/oxsystemsos-logo.svg'
+logo='/usr/share/icons/hicolor/scalable/apps/oxsystemsos-gdm-logo.svg'
 EOF
 glib-compile-schemas /usr/share/glib-2.0/schemas >/dev/null 2>&1 || true
 rm -f /etc/ssh/sshd_config.d/10-archiso.conf
