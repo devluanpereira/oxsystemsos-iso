@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+expected="/run/archiso/bootmnt/ox/x86_64/airootfs.erofs"
+
+if [[ -r "${expected}" ]]; then
+  exit 0
+fi
+
+candidate=""
+search_roots=(
+  /run/archiso
+  /run/media
+  /media
+  /mnt
+)
+
+for root in "${search_roots[@]}"; do
+  [[ -d "${root}" ]] || continue
+  while IFS= read -r path; do
+    candidate="${path}"
+    break 2
+  done < <(find "${root}" -maxdepth 8 -type f -name 'airootfs.erofs' 2>/dev/null | sort)
+done
+
+if [[ -z "${candidate}" ]]; then
+  echo "Unable to locate live rootfs image (airootfs.erofs)." >&2
+  exit 1
+fi
+
+install -d -m 0755 "$(dirname "${expected}")"
+ln -sf "${candidate}" "${expected}"
