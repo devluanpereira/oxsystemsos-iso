@@ -2,7 +2,7 @@
 set -euo pipefail
 
 expected="/run/archiso/bootmnt/ox/x86_64/airootfs.erofs"
-unpack_conf="/etc/calamares/modules/unpackfsc.conf"
+link_path="/tmp/oxsystemsos-airootfs.erofs"
 
 candidate=""
 search_roots=(
@@ -38,9 +38,4 @@ if [[ -z "${candidate}" ]]; then
   exit 1
 fi
 
-cat > "${unpack_conf}" <<EOF
----
-source: ${candidate}
-sourcefs: erofs
-destination: "/"
-EOF
+ln -sfn "${candidate}" "${link_path}"

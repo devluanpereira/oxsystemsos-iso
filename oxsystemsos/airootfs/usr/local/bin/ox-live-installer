@@ -16,6 +16,7 @@ fi
 
 title="OXSystemsOS Installer"
 prompt="Iniciar instalacao do OXSystemsOS agora?"
+live_rootfs_resolver="/usr/local/lib/oxsystemsos/detect-live-rootfs"
 
 if [[ "${autostart_mode}" == "true" ]] && command -v zenity >/dev/null 2>&1; then
   if ! zenity --question \
@@ -25,6 +26,15 @@ if [[ "${autostart_mode}" == "true" ]] && command -v zenity >/dev/null 2>&1; the
       --cancel-label="Later" \
       --width=420; then
     exit 0
+  fi
+fi
+
+if [[ -f "${live_rootfs_resolver}" ]]; then
+  if ! bash "${live_rootfs_resolver}"; then
+    zenity --error \
+      --title="${title}" \
+      --text="Nao foi possivel localizar a imagem live (airootfs.erofs). Regrave o pendrive e tente novamente."
+    exit 1
   fi
 fi
 
