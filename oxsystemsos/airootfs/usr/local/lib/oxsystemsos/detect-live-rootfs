@@ -2,31 +2,45 @@
 set -euo pipefail
 
 expected="/run/archiso/bootmnt/ox/x86_64/airootfs.erofs"
-
-if [[ -r "${expected}" ]]; then
-  exit 0
-fi
+unpack_conf="/etc/calamares/modules/unpackfsc.conf"
 
 candidate=""
 search_roots=(
+  /run/archiso/bootmnt
+  /run/archiso/isodevice
   /run/archiso
   /run/media
   /media
   /mnt
 )
 
-for root in "${search_roots[@]}"; do
-  [[ -d "${root}" ]] || continue
-  while IFS= read -r path; do
-    candidate="${path}"
-    break 2
-  done < <(find "${root}" -maxdepth 8 -type f -name 'airootfs.erofs' 2>/dev/null | sort)
-done
+if [[ -r "${expected}" ]]; then
+  candidate="${expected}"
+else
+  for root in "${search_roots[@]}"; do
+    [[ -d "${root}" ]] || continue
+    while IFS= read -r path; do
+      case "${path}" in
+        */ox/x86_64/airootfs.erofs)
+          candidate="${path}"
+          break 2
+          ;;
+      esac
+      if [[ -z "${candidate}" ]]; then
+        candidate="${path}"
+      fi
+    done < <(find "${root}" -maxdepth 12 -type f -name 'airootfs.erofs' 2>/dev/null | sort)
+  done
+fi
 
 if [[ -z "${candidate}" ]]; then
   echo "Unable to locate live rootfs image (airootfs.erofs)." >&2
   exit 1
 fi
 
-install -d -m 0755 "$(dirname "${expected}")"
-ln -sf "${candidate}" "${expected}"
+cat > "${unpack_conf}" <<EOF
+---
+source: ${candidate}
+sourcefs: erofs
+destination: "/"
+EOF

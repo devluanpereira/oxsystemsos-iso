@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ ! -s /boot/vmlinuz-linux ]]; then
+  echo "Missing /boot/vmlinuz-linux after kernel preparation." >&2
+  exit 1
+fi
+
+if [[ ! -s /boot/initramfs-linux.img ]]; then
+  mkinitcpio -P
+fi
+
+if [[ ! -s /boot/initramfs-linux.img ]]; then
+  echo "Missing /boot/initramfs-linux.img after mkinitcpio." >&2
+  exit 1
+fi
+
+if [[ ! -s /boot/grub/grub.cfg ]]; then
+  bash /usr/local/lib/oxsystemsos/write-grub-config
+fi
+
+if [[ ! -s /boot/grub/grub.cfg ]]; then
+  echo "Missing /boot/grub/grub.cfg after GRUB configuration." >&2
+  exit 1
+fi
+
+if command -v grub-script-check >/dev/null 2>&1; then
+  grub-script-check /boot/grub/grub.cfg
+fi
+
+efi_fallback=""
+while IFS= read -r path; do
+  efi_fallback="${path}"
+  break
+done < <(find /boot /efi -maxdepth 4 -type f -path '*/EFI/BOOT/BOOTX64.EFI' 2>/dev/null | sort)
+
+if [[ -z "${efi_fallback}" ]]; then
+  echo "Missing EFI fallback bootloader (EFI/BOOT/BOOTX64.EFI)." >&2
+  exit 1
+fi

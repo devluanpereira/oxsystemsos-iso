@@ -2,6 +2,7 @@
 set -euo pipefail
 
 root_spec="$(awk '$2 == "/" { print $1; exit }' /etc/fstab)"
+root_opts="$(awk '$2 == "/" { print $4; exit }' /etc/fstab)"
 boot_spec="$(awk '$2 == "/boot" { print $1; exit }' /etc/fstab)"
 
 if [[ -z "${root_spec}" ]]; then
@@ -14,18 +15,38 @@ search_spec="${boot_spec:-$root_spec}"
 kernel_path="/boot/vmlinuz-linux"
 initramfs_path="/boot/initramfs-linux.img"
 ucode_path=""
+rootflags=""
 
 if [[ -n "${boot_spec}" ]]; then
   kernel_path="/vmlinuz-linux"
   initramfs_path="/initramfs-linux.img"
 fi
 
+IFS=',' read -r -a mount_opts <<< "${root_opts}"
+for opt in "${mount_opts[@]}"; do
+  case "${opt}" in
+    subvol=*|subvolid=*)
+      if [[ -n "${rootflags}" ]]; then
+        rootflags+=",${opt}"
+      else
+        rootflags="${opt}"
+      fi
+      ;;
+  esac
+done
+
 case "${search_spec}" in
   UUID=*)
     search_cmd="search --no-floppy --fs-uuid --set=root ${search_spec#UUID=}"
     ;;
+  LABEL=*)
+    search_cmd="search --no-floppy --label --set=root ${search_spec#LABEL=}"
+    ;;
   PARTUUID=*)
     search_cmd="search --no-floppy --partuuid --set=root ${search_spec#PARTUUID=}"
+    ;;
+  PARTLABEL=*)
+    search_cmd="search --no-floppy --part-label --set=root ${search_spec#PARTLABEL=}"
     ;;
   *)
     search_cmd=""
@@ -49,7 +70,11 @@ install -d -m 0755 /boot/grub
     printf '%s\n\n' "${search_cmd}"
   fi
   printf 'menuentry "OXSystemsOS" {\n'
-  printf '    linux %s root=%s rw quiet loglevel=3\n' "${kernel_path}" "${root_spec}"
+  printf '    linux %s root=%s rw quiet loglevel=3' "${kernel_path}" "${root_spec}"
+  if [[ -n "${rootflags}" ]]; then
+    printf ' rootflags=%s' "${rootflags}"
+  fi
+  printf '\n'
   if [[ -n "${ucode_path}" ]]; then
     printf '    initrd %s %s\n' "${ucode_path}" "${initramfs_path}"
   else

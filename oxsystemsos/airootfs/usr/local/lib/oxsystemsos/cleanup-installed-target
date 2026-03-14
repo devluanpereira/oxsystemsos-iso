@@ -29,5 +29,7 @@ systemctl set-default graphical.target >/dev/null 2>&1 || true
 
 rm -f /usr/local/lib/oxsystemsos/prepare-installed-target
 rm -f /usr/local/lib/oxsystemsos/cleanup-installed-target
+rm -f /usr/local/lib/oxsystemsos/detect-live-rootfs
+rm -f /usr/local/lib/oxsystemsos/verify-boot-artifacts
 rm -f /usr/local/lib/oxsystemsos/write-grub-config
 rmdir --ignore-fail-on-non-empty /usr/local/lib/oxsystemsos || true
